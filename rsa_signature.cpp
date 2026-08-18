@@ -6,15 +6,8 @@
 using namespace std;
 using int128 = __int128_t;
 
-int128 gcdValue(int128 a, int128 b) {
-    while (b != 0) {
-        int128 remainder = a % b;
-        a = b;
-        b = remainder;
-    }
-    return a;
-}
 
+// Extended Euclidean Algorithm
 int128 extendedGCD(int128 a, int128 b, int128& x, int128& y) {
     if (b == 0) {
         x = 1;
@@ -23,6 +16,7 @@ int128 extendedGCD(int128 a, int128 b, int128& x, int128& y) {
     }
 
     int128 x1, y1;
+
     int128 gcd = extendedGCD(b, a % b, x1, y1);
 
     x = y1;
@@ -31,6 +25,8 @@ int128 extendedGCD(int128 a, int128 b, int128& x, int128& y) {
     return gcd;
 }
 
+
+// Find modular inverse of e modulo phi
 int128 modInverse(int128 e, int128 phi) {
     int128 x, y;
 
@@ -43,6 +39,8 @@ int128 modInverse(int128 e, int128 phi) {
     return (x % phi + phi) % phi;
 }
 
+
+// Overflow-safe modular multiplication
 int128 modMultiply(int128 a, int128 b, int128 modulus) {
     int128 result = 0;
 
@@ -68,6 +66,8 @@ int128 modMultiply(int128 a, int128 b, int128 modulus) {
     return result;
 }
 
+
+// Modular exponentiation
 int128 modPower(int128 base, int128 exponent, int128 modulus) {
     int128 result = 1;
 
@@ -88,7 +88,7 @@ int128 modPower(int128 base, int128 exponent, int128 modulus) {
 }
 
 
-// Sign using PRIVATE KEY (d, n)
+// Create RSA signature using private key
 int128 createSignature(int128 message, int128 d, int128 n) {
 
     if (message < 0 || message >= n) {
@@ -99,7 +99,7 @@ int128 createSignature(int128 message, int128 d, int128 n) {
 }
 
 
-// Verify using PUBLIC KEY (e, n)
+// Verify RSA signature using public key
 bool verifySignature(int128 message,
                      int128 signature,
                      int128 e,
@@ -112,6 +112,7 @@ bool verifySignature(int128 message,
 }
 
 
+// Convert int128 to string
 string intToString(int128 value) {
 
     if (value == 0)
@@ -130,6 +131,7 @@ string intToString(int128 value) {
 }
 
 
+// Convert string to int128
 int128 stringToInt(string text) {
 
     int128 value = 0;
@@ -146,19 +148,23 @@ int main() {
 
     int128 p = 10000000019;
     int128 q = 10000001041;
-
     int128 e = 65537;
 
     int128 n = p * q;
     int128 phi = (p - 1) * (q - 1);
 
 
-    if (gcdValue(e, phi) != 1) {
+    // We only need the GCD here.
+    // tempX and tempY are ignored.
+    int128 tempX, tempY;
+
+    if (extendedGCD(e, phi, tempX, tempY) != 1) {
         cerr << "Invalid e: e and phi must be coprime\n";
         return 1;
     }
 
 
+    // Private exponent
     int128 d = modInverse(e, phi);
 
 
@@ -181,39 +187,33 @@ int main() {
 
     try {
 
-        // Sender creates signature using private key
+        // Sender signs using private key
         int128 signature =
             createSignature(message, d, n);
 
 
         cout << "\nOriginal message: "
-             << intToString(message) << endl;
+             << intToString(message) << '\n';
 
         cout << "Signature:        "
-             << intToString(signature) << endl;
+             << intToString(signature) << '\n';
 
 
         // Receiver verifies using public key
-        bool valid =
-            verifySignature(message,
-                            signature,
-                            e,
-                            n);
-
-
-        if (valid)
-            cout << "Signature verification: VALID\n";
-        else
-            cout << "Signature verification: INVALID\n";
-
-
-        // Show recovered message
-        int128 recovered =
+        int128 recoveredMessage =
             modPower(signature, e, n);
 
+
         cout << "Recovered message: "
-             << intToString(recovered)
-             << endl;
+             << intToString(recoveredMessage) << '\n';
+
+
+        if (verifySignature(message, signature, e, n)) {
+            cout << "Signature verification: VALID\n";
+        }
+        else {
+            cout << "Signature verification: INVALID\n";
+        }
 
     }
     catch (const exception& error) {
